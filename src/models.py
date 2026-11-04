@@ -1,3 +1,5 @@
+"""Data models for the zones and connections of a map."""
+
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -31,8 +33,8 @@ class Hub(BaseModel):
     """
 
     name: str
-    x: int = Field(ge=0)
-    y: int = Field(ge=0)
+    x: int
+    y: int
     zone: ZoneType = ZoneType.NORMAL
     color: str | None = None
     max_drones: int = Field(default=1, gt=0)
@@ -59,6 +61,6 @@ class Connection(BaseModel):
         hub_b: The other end of the link.
     """
 
-    max_link_capacity: int = Field(ge=0)
+    max_link_capacity: int = Field(default=1, gt=0)
     hub_a: Hub
     hub_b: Hub
