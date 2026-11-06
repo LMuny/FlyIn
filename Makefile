@@ -1,24 +1,26 @@
 all: run
 
 install:
-	uv sync
+		uv sync
 
 run:
-	uv run python3 -m src
+		uv run python3 -m src $(MAP)
 
 debug:
-	uv run -m pdb -m src
+		uv run -m pdb -m src $(MAP)
 
 clean:
-	rm -rf -R mypy_cache __pycache__
+		rm -rf .mypy_cache
+		find . -type d -name __pycache__ -not -path "./.venv/*" -exec rm -rf {} +
+
 
 lint:
-        uv run flake8 .
-        uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+		uv run flake8 . --exclude .venv
+		uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 lint-strict:
-        uv run flake8 .
-        uv run mypy . --strict
+		uv run flake8 . --exclude .venv
+		uv run mypy . --strict
 
 
 .PHONY: all run install debug clean lint lint-strict
