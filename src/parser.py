@@ -16,6 +16,8 @@ class MapParser:
         hubs: Hubs of the map, stored by name.
         connections: Connections of the map.
         connection_keys: Sorted name pairs, used to find duplicates.
+        start_hub: Hub where the drones start, or None until it is parsed.
+        end_hub: Hub the drones must reach, or None until it is parsed.
     """
 
     def __init__(self, filepath: str) -> None:
@@ -29,6 +31,8 @@ class MapParser:
         self.hubs: dict[str, Hub] = {}
         self.connections: list[Connection] = []
         self.connection_keys: set[tuple[str, str]] = set()
+        self.start_hub: Hub | None = None
+        self.end_hub: Hub | None = None
 
     def _print_error(self, message: str, line_no: int | None = None) -> None:
         """Print an error message in the terminal.
@@ -37,7 +41,7 @@ class MapParser:
             message: Cause of the error.
             line_no: Line of the map file, or None if no line applies.
         """
-        RED = '\033[38;5;196m'
+        RED = '\033[1;38;5;88m'
         RESET = '\033[0m'
         if line_no is not None:
             message = f"line {line_no}: {message}"
@@ -109,7 +113,8 @@ class MapParser:
             rest: Text after the prefix, e.g. " roof1 3 4 [zone=restricted]".
 
         Raises:
-            SystemExit: If the line is invalid.
+            SystemExit: If the line is invalid, or defines a second start or
+                end hub.
         """
         split_rest = rest.split(maxsplit=3)
         if len(split_rest) < 3:
@@ -152,6 +157,16 @@ class MapParser:
         except ValidationError as e:
             self._print_error(f"invalid hub: {e.errors()[0]['msg']}", line_no)
             sys.exit(1)
+        if prefix == "start_hub":
+            if self.start_hub:
+                self._print_error("must not have two starting hub", line_no)
+                sys.exit(1)
+            self.start_hub = new_hub
+        elif prefix == "end_hub":
+            if self.end_hub:
+                self._print_error("must not have two end hub", line_no)
+                sys.exit(1)
+            self.end_hub = new_hub
         self.hubs[new_hub.name] = new_hub
 
     def _parse_connection(self, line_no: int, rest: str) -> None:
@@ -269,7 +284,8 @@ class MapParser:
         """Parse the whole map file and store its content.
 
         Raises:
-            SystemExit: If the file is empty or a line is invalid.
+            SystemExit: If the file is empty, a line is invalid, or the start
+                or end hub is missing.
         """
         lines = self._extract_lines()
         if not lines:
@@ -288,11 +304,6 @@ class MapParser:
             else:
                 self._print_error(f"unknown line type '{prefix}'", line_no)
                 sys.exit(1)
-
-
-if __name__ == '__main__':
-    parser = MapParser('maps/easy/01_linear_path.txt')
-    parser.parse()
-    print(parser.nb_drones)
-    print(parser.hubs)
-    print(parser.connections)
+        if not self.end_hub or not self.start_hub:
+            self._print_error("start_hub and / or end_hub missing")
+            sys.exit(1)
