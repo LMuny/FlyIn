@@ -16,13 +16,13 @@ def main() -> None:
 
     parser = MapParser(sys.argv[1])
     parser.parse()
-    print(parser.nb_drones)
-    print(parser.hubs)
-    print(parser.connections)
+    print(f"Drones      : {parser.nb_drones}")
+    print(f"Hubs        : {len(parser.hubs)}")
+    print(f"Connections : {len(parser.connections)}")
     if parser.start_hub is None or parser.end_hub is None:
         sys.exit(1)
-    print(f"Start: {parser.start_hub.name}")
-    print(f"End: {parser.end_hub.name}")
+    print(f"Start       : {parser.start_hub.name}")
+    print(f"End         : {parser.end_hub.name}")
 
 
 if __name__ == "__main__":
