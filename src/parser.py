@@ -1,6 +1,6 @@
 """Parser that reads a map file and builds its hubs and connections."""
 
-import sys
+from sys import exit
 from pydantic import ValidationError
 from src.models import Hub, Connection
 
@@ -61,7 +61,7 @@ class MapParser:
                 return f.read()
         except OSError:
             self._print_error("Incorrect file path")
-            sys.exit(1)
+            exit(1)
 
     def _extract_lines(self) -> list[tuple[int, str]]:
         """Get the lines to parse, without comments and blank lines.
@@ -92,16 +92,16 @@ class MapParser:
         name, _sep, value = line.partition(':')
         if name.strip() != "nb_drones":
             self._print_error("First line should be 'nb_drones'", line_no)
-            sys.exit(1)
+            exit(1)
         try:
             nb_drones = int(value)
         except ValueError:
             self._print_error("nb_drones must be an integer", line_no)
-            sys.exit(1)
+            exit(1)
         if nb_drones <= 0:
             self._print_error(
                 "nb_drones value should be greater than 0", line_no)
-            sys.exit(1)
+            exit(1)
         self.nb_drones = nb_drones
 
     def _parse_hub(self, line_no: int, prefix: str, rest: str) -> None:
@@ -119,7 +119,7 @@ class MapParser:
         split_rest = rest.split(maxsplit=3)
         if len(split_rest) < 3:
             self._print_error("expected <name> <x> <y> [metadata]", line_no)
-            sys.exit(1)
+            exit(1)
 
         unlimited = prefix != "hub"
         metadata: dict[str, str] = {}
@@ -135,16 +135,16 @@ class MapParser:
         name = split_rest[0]
         if "-" in name:
             self._print_error("name must not contain '-'", line_no)
-            sys.exit(1)
+            exit(1)
         if name in self.hubs:
             self._print_error(f"duplicate hub name '{name}'", line_no)
-            sys.exit(1)
+            exit(1)
         try:
             x = int(split_rest[1])
             y = int(split_rest[2])
         except ValueError:
             self._print_error("x and y must be integers", line_no)
-            sys.exit(1)
+            exit(1)
 
         try:
             new_hub = Hub.model_validate({
@@ -156,16 +156,16 @@ class MapParser:
             })
         except ValidationError as e:
             self._print_error(f"invalid hub: {e.errors()[0]['msg']}", line_no)
-            sys.exit(1)
+            exit(1)
         if prefix == "start_hub":
             if self.start_hub:
                 self._print_error("must not have two starting hub", line_no)
-                sys.exit(1)
+                exit(1)
             self.start_hub = new_hub
         elif prefix == "end_hub":
             if self.end_hub:
                 self._print_error("must not have two end hub", line_no)
-                sys.exit(1)
+                exit(1)
             self.end_hub = new_hub
         self.hubs[new_hub.name] = new_hub
 
@@ -183,25 +183,25 @@ class MapParser:
         split_rest = rest.split(maxsplit=1)
         if len(split_rest) < 1:
             self._print_error("expected <hub_a-hub-b> [metadata]", line_no)
-            sys.exit(1)
+            exit(1)
         nodes = split_rest[0].split("-", maxsplit=1)
         if len(nodes) < 2:
             self._print_error("expected <hub_a-hub-b>", line_no)
-            sys.exit(1)
+            exit(1)
         for name in nodes:
             if name not in self.hubs:
                 self._print_error(f"hub: {name}, doesn't exist...", line_no)
-                sys.exit(1)
+                exit(1)
         key = (min(nodes), max(nodes))
         if key in self.connection_keys:
             self._print_error(
                 f"duplicate connection '{nodes[0]}-{nodes[1]}'", line_no)
-            sys.exit(1)
+            exit(1)
         self.connection_keys.add(key)
         if nodes[0] == nodes[1]:
             self._print_error(
                 f"hub '{nodes[0]}' can't connect to itself", line_no)
-            sys.exit(1)
+            exit(1)
         metadata: dict[str, str] = {}
         if len(split_rest) == 2:
             metadata = self._parse_metadata(
@@ -215,7 +215,7 @@ class MapParser:
         except ValidationError as e:
             self._print_error(
                 f"invalid connection: {e.errors()[0]['msg']}", line_no)
-            sys.exit(1)
+            exit(1)
         self.connections.append(new_connection)
 
     def _parse_metadata(self, line_no: int, text: str, allowed: set[str],
@@ -236,22 +236,22 @@ class MapParser:
         """
         if not (text.startswith("[") and text.endswith("]")):
             self._print_error("metadata must be inside [...]", line_no)
-            sys.exit(1)
+            exit(1)
         tags = text[1:-1].split()
         metadata: dict[str, str] = {}
         for tag in tags:
             key, _sep, v = tag.partition('=')
             if not key or not v:
                 self._print_error(f"'{tag}' should be key=value", line_no)
-                sys.exit(1)
+                exit(1)
             if key in ignored:
                 continue
             if key not in allowed:
                 self._print_error(f"unallowed metadata tag '{key}'", line_no)
-                sys.exit(1)
+                exit(1)
             if key in metadata:
                 self._print_error(f"tag '{key}' is given twice", line_no)
-                sys.exit(1)
+                exit(1)
 
             if key in ("max_drones", "max_link_capacity"):
                 try:
@@ -259,11 +259,11 @@ class MapParser:
                 except ValueError:
                     self._print_error(
                         f"the value of {key} must be an integer", line_no)
-                    sys.exit(1)
+                    exit(1)
                 if value <= 0:
                     self._print_error(
                         f"the value of {key} must be positive", line_no)
-                    sys.exit(1)
+                    exit(1)
 
             if key == "zone":
                 zone_type = [
@@ -275,7 +275,7 @@ class MapParser:
                 if v not in zone_type:
                     self._print_error(
                         f"the value of {key} must be an allowed type", line_no)
-                    sys.exit(1)
+                    exit(1)
 
             metadata[key] = v
         return metadata
@@ -290,7 +290,7 @@ class MapParser:
         lines = self._extract_lines()
         if not lines:
             self._print_error("file is empty")
-            sys.exit(1)
+            exit(1)
 
         self._parse_nb_drones(*lines[0])
 
@@ -303,7 +303,7 @@ class MapParser:
                 self._parse_connection(line_no, rest)
             else:
                 self._print_error(f"unknown line type '{prefix}'", line_no)
-                sys.exit(1)
+                exit(1)
         if not self.end_hub or not self.start_hub:
             self._print_error("start_hub and / or end_hub missing")
-            sys.exit(1)
+            exit(1)
