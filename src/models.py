@@ -39,17 +39,6 @@ class Hub(BaseModel):
     color: str | None = None
     max_drones: int = Field(default=1, gt=0)
     unlimited: bool = False
-    drone_count: int = 0
-
-    def has_room(self) -> bool:
-        """Check if one more drone can enter this hub.
-
-        Returns:
-            True if the hub is unlimited or below max_drones.
-        """
-        if self.unlimited:
-            return True
-        return self.drone_count < self.max_drones
 
 
 class Connection(BaseModel):

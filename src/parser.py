@@ -2,6 +2,7 @@
 
 from sys import exit
 from pydantic import ValidationError
+
 from src.models import Hub, Connection
 
 

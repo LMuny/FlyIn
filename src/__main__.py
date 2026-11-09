@@ -1,6 +1,7 @@
 """Entry point of the program: reads a map file given on the command line."""
 
 from sys import argv, exit
+
 from src.parser import MapParser
 from src.graph import Graph
 from src.scheduler import Scheduler
@@ -37,7 +38,10 @@ def main() -> None:
         print(name, [hub.name for hub, _ in links])
     print("\n---------------[Scheduler]----------------\n")
     scheduler = Scheduler(graph)
-    print(scheduler.best_route(parser.start_hub, parser.end_hub))
+    print(scheduler.plan_all(
+        parser.start_hub,
+        parser.end_hub,
+        parser.nb_drones))
     print("\n------------------[END]-------------------\n")
 
 
