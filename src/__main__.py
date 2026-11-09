@@ -5,13 +5,17 @@ from sys import argv, exit
 from src.parser import MapParser
 from src.graph import Graph
 from src.scheduler import Scheduler
+from src.simulation import Simulation
+
+DEBUG: bool = False
 
 
 def main() -> None:
-    """Parse the map file given as an argument and print what it contains.
+    """Plan the drones on the map given as an argument and print each turn.
 
     Raises:
-        SystemExit: If the arguments or the map file are invalid.
+        SystemExit: If the arguments or the map file are invalid, or if
+            the end can't be reached from the start.
     """
     if len(argv) != 2:
         print("usage: 'uv run python3 -m src <map_file_path>'")
@@ -19,30 +23,44 @@ def main() -> None:
 
     parser = MapParser(argv[1])
     parser.parse()
-    print("\n--------------[Element Count]-------------\n")
-    print(f"Drones      : {parser.nb_drones}")
-    print(f"Hubs        : {len(parser.hubs)}")
-    print(f"Connections : {len(parser.connections)}")
     if parser.start_hub is None or parser.end_hub is None:
         exit(1)
-    print(f"Start       : {parser.start_hub.name}")
-    print(f"End         : {parser.end_hub.name}")
-    print("\n-------------[Hub Links List]-------------\n")
     graph = Graph(parser.hubs, parser.connections)
     if not graph.has_path(parser.start_hub, parser.end_hub):
         print("[ERROR]: no path from start to end")
         exit(1)
+
+    if DEBUG:
+        print("\n--------------[Element Count]-------------\n")
+        print(f"Drones      : {parser.nb_drones}")
+        print(f"Hubs        : {len(parser.hubs)}")
+        print(f"Connections : {len(parser.connections)}")
+
+        print(f"Start       : {parser.start_hub.name}")
+        print(f"End         : {parser.end_hub.name}")
+        print("\n-------------[Hub Links List]-------------\n")
+        for name, links in graph.neighbors.items():
+            print(name, [hub.name for hub, _ in links])
+        print("\n---------------[Scheduler]----------------\n")
+        scheduler = Scheduler(graph)
+        routes = scheduler.plan_all(
+            parser.start_hub,
+            parser.end_hub,
+            parser.nb_drones)
+        simulation = Simulation(routes)
+        for line in simulation.turn_lines():
+            print(line)
+        print("\n------------------[END]-------------------\n")
+
     else:
-        print("[PATH FOUND]\n")
-    for name, links in graph.neighbors.items():
-        print(name, [hub.name for hub, _ in links])
-    print("\n---------------[Scheduler]----------------\n")
-    scheduler = Scheduler(graph)
-    print(scheduler.plan_all(
-        parser.start_hub,
-        parser.end_hub,
-        parser.nb_drones))
-    print("\n------------------[END]-------------------\n")
+        scheduler = Scheduler(graph)
+        routes = scheduler.plan_all(
+            parser.start_hub,
+            parser.end_hub,
+            parser.nb_drones)
+        simulation = Simulation(routes)
+        for line in simulation.turn_lines():
+            print(line)
 
 
 if __name__ == "__main__":
