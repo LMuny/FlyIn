@@ -6,6 +6,9 @@ install:
 run:
 		uv run python3 -m src $(MAP)
 
+visual:
+		uv run python3 -m src $(MAP) --visual
+
 debug:
 		uv run -m pdb -m src $(MAP)
 
@@ -23,4 +26,4 @@ lint-strict:
 		uv run mypy . --strict
 
 
-.PHONY: all run install debug clean lint lint-strict
+.PHONY: all run visual install debug clean lint lint-strict
