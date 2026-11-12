@@ -1,11 +1,12 @@
 """Entry point of the program: reads a map file given on the command line."""
 
-from sys import argv, exit
+from sys import argv, exit, stdout
 
 from src.parser import MapParser
 from src.graph import Graph
 from src.scheduler import Scheduler
 from src.simulation import Simulation
+from src.display import Display
 
 DEBUG: bool = False
 
@@ -50,6 +51,13 @@ def main() -> None:
         simulation = Simulation(routes)
         for line in simulation.turn_lines():
             print(line)
+        print("\n---------------[DISPLAY]------------------\n")
+        display = Display(parser.hubs)
+        for line in simulation.turn_lines():
+            if stdout.isatty():
+                print(display.color_line(line))
+            else:
+                print(line)
         print("\n------------------[END]-------------------\n")
 
     else:
@@ -59,8 +67,12 @@ def main() -> None:
             parser.end_hub,
             parser.nb_drones)
         simulation = Simulation(routes)
+        display = Display(parser.hubs)
         for line in simulation.turn_lines():
-            print(line)
+            if stdout.isatty():
+                print(display.color_line(line))
+            else:
+                print(line)
 
 
 if __name__ == "__main__":
