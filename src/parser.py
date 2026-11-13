@@ -245,6 +245,18 @@ class MapParser:
             if not key or not v:
                 self._print_error(f"'{tag}' should be key=value", line_no)
                 exit(1)
+            if key in ("max_drones", "max_link_capacity"):
+                try:
+                    value = int(v)
+                except ValueError:
+                    self._print_error(
+                        f"the value of {key} must be an integer", line_no)
+                    exit(1)
+                if value < 1:
+                    self._print_error(
+                        f"the value of {key} must be at least 1", line_no)
+                    exit(1)
+
             if key in ignored:
                 continue
             if key not in allowed:
@@ -253,18 +265,6 @@ class MapParser:
             if key in metadata:
                 self._print_error(f"tag '{key}' is given twice", line_no)
                 exit(1)
-
-            if key in ("max_drones", "max_link_capacity"):
-                try:
-                    value = int(v)
-                except ValueError:
-                    self._print_error(
-                        f"the value of {key} must be an integer", line_no)
-                    exit(1)
-                if value <= 0:
-                    self._print_error(
-                        f"the value of {key} must be positive", line_no)
-                    exit(1)
 
             if key == "zone":
                 zone_type = [
